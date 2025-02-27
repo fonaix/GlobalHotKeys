@@ -11,11 +11,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+    - name: Checkout
+      uses: actions/checkout@v4.2.2
+
+    - name: Setup
+      uses: actions/setup-dotnet@v4.3.0
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: '8.0.x'
 
     - name: Restore dependencies
       run: dotnet restore src/
