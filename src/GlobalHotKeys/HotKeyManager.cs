@@ -5,19 +5,17 @@ namespace GlobalHotKeys;
 
 public class HotKeyManager : IDisposable
 {
-    // _hotkey subject to fire _hotkey events.
-    private readonly Subject<HotKey> _hotkey = new Subject<HotKey>();
-
     private const uint HotKeyMsg = 0x312u;
-    private const uint RegisterHotKeyMsg = 0x0400u; // WM_USER
-    private const uint UnregisterHotKeyMsg = 0x0401u; // WM_USER + 1
+    private const uint RegisterHotKeyMsg = 0x0400u;     // WM_USER
+    private const uint UnregisterHotKeyMsg = 0x0401u;   // WM_USER + 1
 
-    // Store the message loop thread and window handle.
-    private readonly Thread _messageLoopThread;
-
+    private readonly Subject<HotKey> _hotkey = new();   // _hotkey subject to fire _hotkey events.
+    private readonly Thread _messageLoopThread;         // Store the message loop thread and window handle.
     private readonly IntPtr _hWnd;
 
-    // Constructor initializes the message loop thread and window.
+    /// <summary>
+    /// Constructor initializes the message loop thread and window.
+    /// </summary>
     public HotKeyManager()
     {
         // messageLoopThreadHwnd:
@@ -28,10 +26,10 @@ public class HotKeyManager : IDisposable
         void ThreadEntry()
         {
             // Retrieve the module handle.
-            IntPtr hInstance = NativeFunctions.GetModuleHandle(null);
+            var hInstance = NativeFunctions.GetModuleHandle(null);
 
             // Dictionary to keep track of registrations.
-            Dictionary<int, HotKey> registrations = new Dictionary<int, HotKey>();
+            var registrations = new Dictionary<int, HotKey>();
 
             // nextId: find the next free id from 0x0000 to 0xBFFF.
             int? NextId()
@@ -81,9 +79,9 @@ public class HotKeyManager : IDisposable
                 if (uMsg == RegisterHotKeyMsg)
                 {
                     // Extract key and modifiers.
-                    VirtualKeyCode key = (VirtualKeyCode)wParam.ToInt32();
-                    Modifiers modifiers = (Modifiers)lParam.ToInt32();
-                    int? id = NextId();
+                    var key = (VirtualKeyCode)wParam.ToInt32();
+                    var modifiers = (Modifiers)lParam.ToInt32();
+                    var id = NextId();
                     if (id.HasValue)
                     {
                         return register(hWnd, key, modifiers, id.Value) ? new IntPtr(id.Value) : new IntPtr(-1);
@@ -95,7 +93,7 @@ public class HotKeyManager : IDisposable
                 }
                 else if (uMsg == UnregisterHotKeyMsg)
                 {
-                    int id = wParam.ToInt32();
+                    var id = wParam.ToInt32();
                     return unregister(hWnd, id) ? new IntPtr(id) : new IntPtr(-1);
                 }
                 else if (uMsg == HotKeyMsg)
@@ -114,18 +112,18 @@ public class HotKeyManager : IDisposable
             }
 
             // Create the window class from the window procedure.
-            WndProc wndProcDelegate = new WndProc(MessageHandler);
+            var wndProcDelegate = new WndProc(MessageHandler);
             // Convert the WndProc delegate into a WNDCLASSEX structure.
-            WNDCLASSEX wndClassEx = WNDCLASSEX.FromWndProc(wndProcDelegate);
+            var wndClassEx = WNDCLASSEX.FromWndProc(wndProcDelegate);
 
             // Register the window class.
-            int registeredClass = NativeFunctions.RegisterClassEx(ref wndClassEx);
+            var registeredClass = NativeFunctions.RegisterClassEx(ref wndClassEx);
 
             // messageLoop: processes messages until quit.
             void MessageLoop(IntPtr hWnd)
             {
-                TagMSG msg = new TagMSG();
-                int ret = 0;
+                var msg = new TagMSG();
+                var ret = 0;
                 while (((ret = NativeFunctions.GetMessage(ref msg, hWnd, 0u, 0u)) != -1) && (ret != 0))
                 {
                     NativeFunctions.TranslateMessage(ref msg);
@@ -146,7 +144,7 @@ public class HotKeyManager : IDisposable
             }
 
             // create the window.
-            IntPtr localHWnd = NativeFunctions.CreateWindowEx(0, (uint)registeredClass, null, WindowStyle.WS_OVERLAPPED, 0, 0, 640, 480, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            var localHWnd = NativeFunctions.CreateWindowEx(0, (uint)registeredClass, null, WindowStyle.WS_OVERLAPPED, 0, 0, 640, 480, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
 
             // Signal that the window has been created.
             tcsHwnd.SetResult(localHWnd);
@@ -166,26 +164,32 @@ public class HotKeyManager : IDisposable
         _hWnd = tcsHwnd.Task.Result;
     }
 
-    // Register method: registers a _hotkey.
+    /// <summary>
+    /// Register method: registers a _hotkey.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="modifiers"></param>
+    /// <returns></returns>
     public IRegistration Register(VirtualKeyCode key, Modifiers modifiers)
     {
         // Retrieve the window handle.
-        IntPtr hWnd = _hWnd;
+        var hWnd = _hWnd;
 
         // tell the message loop to register the _hotkey.
-        IntPtr result = NativeFunctions.SendMessage(hWnd, RegisterHotKeyMsg, new IntPtr((int)key), new IntPtr((int)modifiers));
+        var result = NativeFunctions.SendMessage(hWnd, RegisterHotKeyMsg, new IntPtr((int)key), new IntPtr((int)modifiers));
 
         // return a disposable that instructs the message loop to unregister the _hotkey on disposal.
         return new Registration(hWnd, result);
     }
 
-    // HotKeyPressed property: returns an observable sequence of hotkeys.
-    public IObservable<HotKey> HotKeyPressed
-    {
-        get { return _hotkey.AsObservable(); }
-    }
+    /// <summary>
+    /// HotKeyPressed property: returns an observable sequence of hotkeys.
+    /// </summary>
+    public IObservable<HotKey> HotKeyPressed => _hotkey.AsObservable();
 
-    // Dispose method: shuts down the message loop.
+    /// <summary>
+    /// Dispose method: shuts down the message loop.
+    /// </summary>
     public void Dispose()
     {
         // shutdown the message loop.
@@ -194,7 +198,9 @@ public class HotKeyManager : IDisposable
         _messageLoopThread.Join();
     }
 
-    // Explicit interface implementation for IDisposable.
+    /// <summary>
+    /// Explicit interface implementation for IDisposable.
+    /// </summary>
     void IDisposable.Dispose()
     {
         Dispose();
@@ -203,35 +209,25 @@ public class HotKeyManager : IDisposable
     private class Registration : IRegistration
     {
         private readonly IntPtr _hWnd;
-        private readonly int _id;
 
         public Registration(IntPtr hWnd, IntPtr result)
         {
             _hWnd = hWnd;
-            _id = result.ToInt32();
+            Id = result.ToInt32();
         }
 
-        // IsSuccessful property based on the result.
-        public bool IsSuccessful
-        {
-            get
-            {
-                return _id != -1;
-            }
-        }
+        public bool IsSuccessful => Id != -1;
 
-        // Id property.
-        public int Id
-        {
-            get { return _id; }
-        }
+        public int Id { get; }
 
-        // Dispose method unregisters the _hotkey if registration was successful.
+        /// <summary>
+        /// Dispose method unregisters the _hotkey if registration was successful.
+        /// </summary>
         public void Dispose()
         {
-            if (_id != -1)
+            if (Id != -1)
             {
-                NativeFunctions.SendMessage(_hWnd, UnregisterHotKeyMsg, new IntPtr(_id), IntPtr.Zero);
+                NativeFunctions.SendMessage(_hWnd, UnregisterHotKeyMsg, new IntPtr(Id), IntPtr.Zero);
             }
         }
     }
