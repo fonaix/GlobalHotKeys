@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using GlobalHotKeys;
-using GlobalHotKeys.Native.Types;
 
 namespace WinForms
 {

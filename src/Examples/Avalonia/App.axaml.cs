@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GlobalHotKeys;
-using GlobalHotKeys.Native.Types;
 
 namespace AvaloniaApp
 {

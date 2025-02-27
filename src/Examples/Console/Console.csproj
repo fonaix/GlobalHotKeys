@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\GlobalHotKeys\GlobalHotKeys.fsproj" />
+    <ProjectReference Include="..\..\GlobalHotKeys\GlobalHotKeys.csproj" />
   </ItemGroup>
 
 </Project>

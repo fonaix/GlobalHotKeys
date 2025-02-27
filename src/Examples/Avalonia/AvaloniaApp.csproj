@@ -10,6 +10,6 @@
     <PackageReference Include="Avalonia.Diagnostics" Version="0.10.0" />
    </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\GlobalHotKeys\GlobalHotKeys.fsproj" />
+    <ProjectReference Include="..\..\GlobalHotKeys\GlobalHotKeys.csproj" />
   </ItemGroup>
 </Project>
