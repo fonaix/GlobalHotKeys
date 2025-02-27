@@ -20,7 +20,6 @@ Here is an example for a C# Console Application:
 ```cs
 using System;
 using GlobalHotKeys;
-using GlobalHotKeys.Native.Types;
 
 void HotKeyPressed(HotKey hotKey) =>
   Console.WriteLine($"HotKey Pressed: Id = {hotKey.Id}, Key = {hotKey.Key}, Modifiers = {hotKey.Modifiers}");
@@ -35,7 +34,7 @@ Console.ReadLine();
 ```
 
 ## Source POI
-- F#
+- C#
 - Examples for
   - WinForms
   - Wpf
